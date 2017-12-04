@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>iKy</title>
+
+  <link rel="icon" type="image/png" href="/static/images/iKy.png" />
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css"> <!-- Esta es requerida ??? -->
+
+  <style type="text/css">
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #333;
+    }
+
+    canvas{
+      position: absolute;
+      width: 100%; 
+      height: 90%;
+      top: 0; right: 0; bottom: 0; left: 0;
+    }
+
+    svg {
+        height: 100%
+        display: block;
+        background-color: transparent;
+        margin: auto;
+    }
+
+    .node {
+      stroke: #00bdbf;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #00bdbf;
+      /* stroke-opacity: .6; */
+    }
+
+    .tittle_node {
+      fill: #00fbff;
+      font-family: "Arial";
+      font-size: 12px;
+      /* stroke: #6d4c41; */
+    }
+
+    .tittle_down {
+      fill: #b3feff;
+      font-family: "Arial";
+      font-size: 12px;
+      /* stroke: #6d4c41; */
+    }
+    .btn {
+      -webkit-border-radius: 0;
+      -moz-border-radius: 0;
+      border-radius: 0px;
+      font-family: Arial;
+      color: #333;
+      font-size: 20px;
+      background: #00BDBF;
+      padding: 10px 20px 10px 20px;
+      text-decoration: none;
+      border-style: none;
+    }
+
+    .btn:hover {
+      background: #00CDBF;
+      color: #FFFFFF;
+      text-decoration: none;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <canvas></canvas>
+  <svg id="chart"></svg>
+  <button type="button" class='btn' onclick="history.back(-1)">Back</button>
+
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+
+  <script type="text/javascript">
+  'use strict';
+
+  var JSONDATA = JSON.parse(`{{jsondata|safe}}`);
+  var WIDTH = window.innerWidth;
+  var HEIGTH = window.innerHeight - 50;
+
+  drawChart('#chart', JSONDATA, HEIGTH, WIDTH);
+
+  function drawChart(selector, data, height, width) {
+
+      data = readData(data);
+      var force = getForce(height, width);
+      var color = getColor();
+      var chart = createChart(selector, height, width);
+      drawPlot(chart, force, color, data);
+  }
+
+  function readData(data) {
+
+      var uid = 0;
+      var cache = {};
+      var list = [];
+      var links = [];
+
+      function Node(name, adds) {
+          this.uid = uid++;
+          this.name = name;
+          list.push(this);
+          cache[this.name] = this;
+          if (adds) {
+              for (var key in adds) {
+                  this[key] = adds[key];
+              }
+          }
+      }
+      function getUser(name, picture, desc) {
+          if (name in cache) return cache[name];
+          return new Node(name, { picture: picture, group: 0, desc: desc });
+      }
+      function getLink(link, picture, desc) {
+          var name = link.replace(/^https?:\/\/([^/:]+).*$/, '$1');
+          if (name in cache) return cache[name];
+          return new Node(name, { picture: picture, group: 1, desc: desc });
+      }
+      function addLinks(user, topic) {
+          console.log(user.uid + " - " + topic.uid);
+          links.push({ source: user.uid, target: topic.uid });
+      }
+
+      data.forEach(function (entry) {
+          var linkage = getLink(entry.link, entry.picture, entry.Desc);
+          var tittle = getUser(entry.tittle, entry.picture, entry.Desc);
+          linkage.usage++;
+          addLinks(tittle, linkage);
+      });
+      return { list: list, links: links };
+  }
+
+  function createChart(selector, height, width) {
+      return d3.select(selector).attr('width', width).attr('height', height);
+  }
+
+  function getForce(height, width) {
+      return d3.layout.force().charge(-500).linkDistance(100).size([width, height]);
+  }
+
+  function getColor() {
+      return d3.scale.category10();
+  }
+
+  function drawPlot(chart, force, color, data) {
+      force.nodes(data.list).links(data.links).start();
+
+      var link = chart.selectAll('.link').data(data.links).enter().append('line').attr('class', 'link').style('stroke-width', 1);
+
+      var node = chart.selectAll('.node').data(data.list).enter().append('g').call(force.drag);
+
+      node.append('circle').attr('r', function (d) {
+          return d.usage ? 3 + 3 * d.usage : 21;
+      }).style('fill', function (d) {
+          if (d.group == 0) return '#00BDBF';
+          if (d.group == 1) return '#00BDBF';
+          return color(d.group);
+      });
+
+      node.each(function (d) {
+          if (!d.picture) return;
+          d3.select(this).append('image').attr('xlink:href', d.picture).attr('x', -15).attr('y', -15).attr('width', 30).attr('height', 30).attr('clip-path', 'url(#circle-clip-' + d.uid + ')');
+          d3.select(this).append('clipPath').attr('id', 'circle-clip-' + d.uid).append('circle').attr('r', 20);
+      });
+
+      node.each(function (d) {
+          var title = d.name;
+          var desc = d.desc;
+          d3.select(this).append('text')
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .attr('fill', 'white')
+            .attr("y", -27)
+            .attr("class", "tittle_node")
+            .text(title);
+          d3.select(this).append('text')
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .attr('fill', 'white')
+            .attr("y", 30)
+            .attr("class", "tittle_down")
+            .text(desc);
+
+      });
+
+      force.on('tick', function () {
+          link.attr('x1', function (d) {
+              return d.source.x;
+          }).attr('y1', function (d) {
+              return d.source.y;
+          }).attr('x2', function (d) {
+              return d.target.x;
+          }).attr('y2', function (d) {
+              return d.target.y;
+          });
+
+          node.attr('transform', function (d) {
+              return 'translate(' + d.x + ', ' + d.y + ')';
+          });
+      });
+  }
+
+  </script>
+
+<script type="text/javascript">
+var canvasDots = function() {
+  var canvas = document.querySelector('canvas'),
+    ctx = canvas.getContext('2d'),
+    colorDot = '#00bdbf',
+    color = '#00bdbf';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  ctx.fillStyle = colorDot;
+  ctx.lineWidth = .1;
+  ctx.strokeStyle = color;
+
+  var centerPosition = {
+    x: 30 * canvas.width / 100,
+    y: 30 * canvas.height / 100
+  };
+
+  var dots = {
+    nb: 500,
+    distance: 70,
+    d_radius: 300,
+    array: []
+  };
+
+  function Dot(){
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+
+    this.vx = -.5 + Math.random();
+    this.vy = -.5 + Math.random();
+
+    this.radius = Math.random();
+  }
+
+  Dot.prototype = {
+    create: function(){
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+      ctx.fill();
+    },
+
+    animate: function(){
+      for(i = 0; i < dots.nb; i++){
+
+        var dot = dots.array[i];
+
+        if(dot.y < 0 || dot.y > canvas.height){
+          dot.vx = dot.vx;
+          dot.vy = - dot.vy;
+        }
+        else if(dot.x < 0 || dot.x > canvas.width){
+          dot.vx = - dot.vx;
+          dot.vy = dot.vy;
+        }
+        dot.x += dot.vx;
+        dot.y += dot.vy;
+      }
+    },
+
+    line: function(){
+      for(i = 0; i < dots.nb; i++){
+        for(j = 0; j < dots.nb; j++){
+          i_dot = dots.array[i];
+          j_dot = dots.array[j];
+
+          if((i_dot.x - j_dot.x) < dots.distance && (i_dot.y - j_dot.y) < dots.distance && (i_dot.x - j_dot.x) 
+            > - dots.distance && (i_dot.y - j_dot.y) > - dots.distance){
+            if((i_dot.x - centerPosition.x) < dots.d_radius && (i_dot.y - centerPosition.y)
+              < dots.d_radius && (i_dot.x - centerPosition.x) > - dots.d_radius && (i_dot.y - centerPosition.y) > - dots.d_radius){
+              ctx.beginPath();
+              ctx.moveTo(i_dot.x, i_dot.y);
+              ctx.lineTo(j_dot.x, j_dot.y);
+              ctx.stroke();
+              ctx.closePath();
+            }
+          }
+        }
+      }
+    }
+  };
+
+  function createDots(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for(i = 0; i < dots.nb; i++){
+      dots.array.push(new Dot());
+      dot = dots.array[i];
+
+      dot.create();
+    }
+
+    dot.line();
+    dot.animate();
+  }
+
+  centerPosition.x = window.innerWidth / 2;
+  centerPosition.y = window.innerHeight / 2;
+
+  setInterval(createDots, 1000/30);
+};
+
+window.onload = function() {
+  canvasDots();
+};
+</script>
+
+</body>
+</html>

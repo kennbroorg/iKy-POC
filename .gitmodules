@@ -1,0 +1,3 @@
+[submodule "src/datasploit"]
+	path = src/datasploit
+	url = https://github.com/datasploit/datasploit

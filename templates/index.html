@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>iKy</title>
+
+  <link rel="icon" type="image/png" href="/static/images/iKy.png" />
+  <link href='https://fonts.googleapis.com/css?family=Raleway:200,400,800' rel='stylesheet' type='text/css'>
+
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+
+  <style type="text/css">
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #333;
+    }
+
+    canvas{
+      position: absolute;
+      width: 100%; height: 100%;
+      top: 0; right: 0; bottom: 0; left: 0;
+    }
+
+    .centered {
+      width: 550px;
+      height: 110px;
+      margin: auto;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+
+    .group {
+      width: 100%;
+      height: 110px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    label {
+      position: absolute;
+      top: 36.66667px;
+      color: rgba(0, 189, 191, 0.5);
+      font: 400 36.66667px Roboto;
+      cursor: text;
+      transition: .25s ease;
+    }
+
+    input {
+      display: block;
+      width: 100%;
+      padding-top: 36.66667px;
+      border: none;
+      border-radius: 0;
+      color: white;
+      background: #333;
+      font-size: 36.66667px;
+      transition: .3s ease;
+      background-color: transparent;
+    }
+
+    input:valid ~ label {
+      top: 0;
+      font: 700 22px Roboto;
+      color: rgba(0, 189, 191, 0.5);
+    }
+
+    input:focus {
+      outline: none;
+    }
+
+    input:focus ~ label {
+      top: 0;
+      font: 700 22px Roboto;
+      color: #2196f3;
+    }
+
+    input:focus ~ .bar:before {
+      transform: translateX(0);
+    }
+
+    input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0px 1000px #333 inset;
+      -webkit-text-fill-color: white !important;
+    }
+
+    .bar {
+      /* background: rgba(255, 255, 255, 0.5); */
+      background: rgba(0, 189, 191, 0.5);
+      content: '';
+      width: 550px;
+      height: 3.66667px;
+      transition: .3s ease;
+      position: relative;
+    }
+
+    .bar:before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 150%;
+      background: #2196f3;
+      transform: translateX(-100%);
+    }
+
+    ::selection {
+      background: rgba(33, 150, 243, 0.3);
+    }
+
+    #loader-wrapper {
+      visibility: hidden;
+      position: fixed;
+      top: -100px;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      border-top-color: #00bdbf;
+    }
+
+    #loader {
+      display: block;
+      position: relative;
+      left: 50%;
+      top: 50%;
+      width: 150px;
+      height: 150px;
+      margin: -75px 0 0 -75px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #00bdbf;
+      -webkit-animation: spin 2s linear infinite;
+      /* Chrome, Opera 15+, Safari 5+ */
+
+      animation: spin 2s linear infinite;
+      /* Chrome, Firefox 16+, IE 10+, Opera */
+
+      z-index: 1001;
+    }
+
+    #loader-logo {
+      display: block;
+      position: absolute;
+      left: 48%;
+      top: 46%;
+      z-index: 1001;
+    }
+
+    #loader:before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      right: 5px;
+      bottom: 5px;
+      border-radius: 50%;
+      border: 5px solid transparent;
+      border-top-color: white;
+      -webkit-animation: spin 3s linear infinite;
+      /* Chrome, Opera 15+, Safari 5+ */
+
+      animation: spin 3s linear infinite;
+      /* Chrome, Firefox 16+, IE 10+, Opera */
+    }
+
+    #loader:after {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      bottom: 15px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #00bdbf;
+      -webkit-animation: spin 1.5s linear infinite;
+      /* Chrome, Opera 15+, Safari 5+ */
+      animation: spin 1.5s linear infinite;
+      /* Chrome, Firefox 16+, IE 10+, Opera */
+    }
+
+    @-webkit-keyframes spin {
+      0% {
+        -webkit-transform: rotate(0deg);
+        /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(0deg);
+        /* IE 9 */
+        transform: rotate(0deg);
+        /* Firefox 16+, IE 10+, Opera */
+      }
+      100% {
+        -webkit-transform: rotate(360deg);
+        /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(360deg);
+        /* IE 9 */
+        transform: rotate(360deg);
+        /* Firefox 16+, IE 10+, Opera */
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        -webkit-transform: rotate(0deg);
+        /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(0deg);
+        /* IE 9 */
+        transform: rotate(0deg);
+        /* Firefox 16+, IE 10+, Opera */
+      }
+      100% {
+        -webkit-transform: rotate(360deg);
+        /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(360deg);
+        /* IE 9 */
+        transform: rotate(360deg);
+        /* Firefox 16+, IE 10+, Opera */
+      }
+    }
+
+    .no-js #loader-wrapper {
+      display: none;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div id="loader-wrapper">
+      <div id="loader"></div>
+      <div class="loader-section section-left"></div>
+      <div class="loader-section section-right"></div>
+      <div id="loader-logo"><img
+        src="static/images/ic_fingerprint_white_48dp_1x.png"  height="70" width="70"
+        alt="fingerprint"></div>
+  </div>
+
+  <canvas></canvas>
+
+  <form name="formCollect" action="/dataCollect" method="post">
+
+    <div class="centered">
+      <div class="group">
+        <input type="text" name="email" id="name" required="required" autocomplete="off"/>
+        <label for="name">e-Mail</label>
+        <div class="bar"></div>
+      </div>
+    </div>
+
+  </form>
+
+<script type="text/javascript">
+var canvasDots = function() {
+  var canvas = document.querySelector('canvas'),
+    ctx = canvas.getContext('2d'),
+    colorDot = '#00bdbf',
+    color = '#00bdbf';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  ctx.fillStyle = colorDot;
+  ctx.lineWidth = .1;
+  ctx.strokeStyle = color;
+
+  var centerPosition = {
+    x: 30 * canvas.width / 100,
+    y: 30 * canvas.height / 100
+  };
+
+  var dots = {
+    nb: 500,
+    distance: 70,
+    d_radius: 300,
+    array: []
+  };
+
+  function Dot(){
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+
+    this.vx = -.5 + Math.random();
+    this.vy = -.5 + Math.random();
+
+    this.radius = Math.random();
+  }
+
+  Dot.prototype = {
+    create: function(){
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+      ctx.fill();
+    },
+
+    animate: function(){
+      for(i = 0; i < dots.nb; i++){
+
+        var dot = dots.array[i];
+
+        if(dot.y < 0 || dot.y > canvas.height){
+          dot.vx = dot.vx;
+          dot.vy = - dot.vy;
+        }
+        else if(dot.x < 0 || dot.x > canvas.width){
+          dot.vx = - dot.vx;
+          dot.vy = dot.vy;
+        }
+        dot.x += dot.vx;
+        dot.y += dot.vy;
+      }
+    },
+
+    line: function(){
+      for(i = 0; i < dots.nb; i++){
+        for(j = 0; j < dots.nb; j++){
+          i_dot = dots.array[i];
+          j_dot = dots.array[j];
+
+          if((i_dot.x - j_dot.x) < dots.distance && (i_dot.y - j_dot.y) < dots.distance && (i_dot.x - j_dot.x)
+            > - dots.distance && (i_dot.y - j_dot.y) > - dots.distance){
+            if((i_dot.x - centerPosition.x) < dots.d_radius && (i_dot.y - centerPosition.y)
+              < dots.d_radius && (i_dot.x - centerPosition.x) > - dots.d_radius && (i_dot.y - centerPosition.y) > - dots.d_radius){
+              ctx.beginPath();
+              ctx.moveTo(i_dot.x, i_dot.y);
+              ctx.lineTo(j_dot.x, j_dot.y);
+              ctx.stroke();
+              ctx.closePath();
+            }
+          }
+        }
+      }
+    }
+  };
+
+  function createDots(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for(i = 0; i < dots.nb; i++){
+      dots.array.push(new Dot());
+      dot = dots.array[i];
+
+      dot.create();
+    }
+
+    dot.line();
+    dot.animate();
+  }
+
+  centerPosition.x = window.innerWidth / 2;
+  centerPosition.y = window.innerHeight / 2;
+
+  setInterval(createDots, 1000/30);
+};
+
+window.onload = function() {
+  canvasDots();
+};
+</script>
+
+<script type="text/javascript">
+  $("#name").keypress(function(e){
+    if(e.which == 13){
+      e.preventDefault();
+      $("#loader-wrapper").css("visibility", "visible");
+      document.forms["formCollect"].submit();
+    }
+  });;
+</script>
+
+</body>
+</html>
